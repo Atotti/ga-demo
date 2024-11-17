@@ -162,7 +162,7 @@ def genetic_algorithm(initial_population, base_expanded, generations=100, surviv
     population = initial_population
     best_fitness_history = []
     max_fitness_stable_count = 0  # 進化完了の判定に使用
-    tolerance = 1e-4  # 許容誤差を設定
+    tolerance = 1e-5  # 許容誤差を設定
 
     for generation in range(generations):
         # 各個体の適応度を計算
