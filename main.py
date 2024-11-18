@@ -5,8 +5,8 @@ from scipy import ndimage
 
 POPULATION_SIZE = 160  # 集団のサイズ
 SUVIVAL_RATE = 0.5  # 生存率
-TOLERANCE = 1e-3  # 許容誤差
-IMAGE_FILE = 'imgs/sample2.png'
+TOLERANCE = 1e-5  # 許容誤差
+IMAGE_FILE = 'imgs/sample.jpg'
 IMAGE_SIZE = 256
 
 print(f"{POPULATION_SIZE=}, {SUVIVAL_RATE=}, {TOLERANCE=}, {IMAGE_FILE=}, {IMAGE_SIZE=}")
@@ -273,6 +273,7 @@ if __name__ == '__main__':
 
     plt.tight_layout()
     plt.show()
+    plt.savefig(f'{IMAGE_FILE}_{POPULATION_SIZE}_{IMAGE_SIZE}_result.png')
 
-    cv2.imwrite('imgs/enlarged_image.jpg', best_individual)
+    cv2.imwrite(f'imgs/{IMAGE_FILE}_{POPULATION_SIZE}_{IMAGE_SIZE}enlarged_image.jpg', best_individual)
 
