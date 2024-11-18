@@ -1,12 +1,15 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import ndimage
 
 POPULATION_SIZE = 160  # 集団のサイズ
 SUVIVAL_RATE = 0.5  # 生存率
-TOLERANCE = 1e-5  # 許容誤差
+TOLERANCE = 1e-3  # 許容誤差
+IMAGE_FILE = 'imgs/sample2.png'
+IMAGE_SIZE = 256
 
-print(POPULATION_SIZE, SUVIVAL_RATE, TOLERANCE)
+print(f"{POPULATION_SIZE=}, {SUVIVAL_RATE=}, {TOLERANCE=}, {IMAGE_FILE=}, {IMAGE_SIZE=}")
 
 def initialize_population(base_image, population_size=10):
     """
@@ -31,12 +34,18 @@ def initialize_population(base_image, population_size=10):
         for i in range(0, large_image_shape[0], 2):
             for j in range(0, large_image_shape[1], 2):
                 neighborhood = base_expanded[max(0, i-1):min(large_image_shape[0], i+3),
-                                             max(0, j-1):min(large_image_shape[1], j+3)]
+                                            max(0, j-1):min(large_image_shape[1], j+3)]
                 G_min, G_max = neighborhood.min(), neighborhood.max()
                 delta_range_min = G_min - base_expanded[i:i+2, j:j+2]
                 delta_range_max = G_max - base_expanded[i:i+2, j:j+2]
+
+                # `delta_range_max` が `delta_range_min` よりも大きいことを確認
+                valid_delta_range = delta_range_max > delta_range_min
+                delta_range_min = np.where(valid_delta_range, delta_range_min, 0)
+                delta_range_max = np.where(valid_delta_range, delta_range_max, 1)
+
                 delta = np.random.uniform(delta_range_min, delta_range_max)
-                delta = delta - delta.mean() # 変位の合計をゼロに調整
+                delta = delta - delta.mean()  # 変位の合計をゼロに調整
                 candidate_deltas[i:i+2, j:j+2] = delta
         initial_population.append(candidate_deltas)
 
@@ -47,11 +56,9 @@ def calculate_edge_strength(image):
     画像の1次微分によるエッジ強度 E(k) を計算する。
     """
     image = image.astype(np.float32)
-    # エッジ強度の計算 (Prewittフィルタを使用)
-    delta_h = (image[2:, 1:-1] + image[2:, :-2] + image[2:, 2:] -
-               image[:-2, 1:-1] - image[:-2, :-2] - image[:-2, 2:])
-    delta_v = (image[1:-1, 2:] + image[:-2, 2:] + image[2:, 2:] -
-               image[1:-1, :-2] - image[:-2, :-2] - image[2:, :-2])
+    # Prewittフィルタでエッジ強度を計算
+    delta_h = ndimage.prewitt(image, axis=0)
+    delta_v = ndimage.prewitt(image, axis=1)
 
     E_k = np.sum(np.sqrt(delta_h**2 + delta_v**2))
     return E_k
@@ -60,13 +67,13 @@ def calculate_noise(image):
     """
     画像の2次微分によるノイズ成分 L(k) を計算する。
     """
-    # 2次微分 (Laplacianオペレータを使用)
-    l_x = (image[:-2, :-2] + image[:-2, 1:-1] + image[:-2, 2:] +
-           image[1:-1, :-2] + image[1:-1, 2:] +
-           image[2:, :-2] + image[2:, 1:-1] + image[2:, 2:] - 8 * image[1:-1, 1:-1])
+    image = image.astype(np.float32)
+    # Laplacianフィルタでノイズ成分を計算
+    l_x = ndimage.laplace(image)
 
     L_k = np.sum(np.sqrt(l_x**2))
     return L_k
+
 
 def calculate_fitness(delta_image, base_expanded=None):
     # デルタ値を用いて実際の画像を生成
@@ -77,7 +84,7 @@ def calculate_fitness(delta_image, base_expanded=None):
     # 以下、エッジ強度とノイズ成分を計算
     E_k = calculate_edge_strength(image)
     L_k = calculate_noise(image)
-    F_k = E_k / (L_k + 1e-5)
+    F_k = E_k / L_k
     return F_k
 
 def selection(population, fitness_scores, survival_rate=SUVIVAL_RATE):
@@ -195,8 +202,9 @@ def genetic_algorithm(initial_population, base_expanded, generations=100, surviv
         else:
             max_fitness_stable_count = 0  # 初回はカウンタをリセット
 
-        # 次世代の集団を生成
-        population = selection(population, fitness_scores, survival_rate=survival_rate)
+        if generation != 0:
+            # 次世代の集団を生成
+            population = selection(population, fitness_scores, survival_rate=survival_rate)
 
         if generation % 10 == 0:
             print(f"第{generation + 1}世代: 最大適応度: {max_fitness:.6f}")
@@ -209,8 +217,10 @@ def generate_image_from_deltas(delta_image, base_expanded):
 
 if __name__ == '__main__':
     # 画像の読み込み（グレースケール）
-    original_image = cv2.imread('imgs/sample2.jpg', cv2.IMREAD_GRAYSCALE).astype(np.float32)
-    original_image = cv2.resize(original_image, (128, 128)) # 画像サイズをリサイズ
+    original_image = cv2.imread(IMAGE_FILE, cv2.IMREAD_GRAYSCALE).astype(np.int16)
+    original_image = cv2.resize(original_image, (IMAGE_SIZE, IMAGE_SIZE)) # 画像サイズをリサイズ
+    original_image_fitness = calculate_fitness(original_image)
+    print(f"Original Image Fitness: {original_image_fitness:.2f}")
 
     if original_image is None:
         raise FileNotFoundError("指定された画像ファイルが見つかりません")
@@ -225,16 +235,19 @@ if __name__ == '__main__':
 
     # 最近隣内挿法で生成した拡大画像
     nearest_neighbor_image = cv2.resize(small_image, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_NEAREST)
+    nearest_neighbor_image_fitness = calculate_fitness(nearest_neighbor_image)
+    print(f"Nearest Neighbor Fitness: {nearest_neighbor_image_fitness:.2f}")
 
     # 3次畳み込み内挿法で生成した拡大画像
     bicubic_image = cv2.resize(small_image, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_CUBIC)
+    bicubic_image_fitness = calculate_fitness(bicubic_image)
+    print(f"Bicubic Interpolation Fitness: {bicubic_image_fitness:.2f}")
 
 
     ###################### ここからGAの実行 ######################
     print("Start GA...")
     # 集団の初期化
-    population_size = POPULATION_SIZE * 2 # 初期集団は2倍に設定
-    initial_population, base_expanded = initialize_population(small_image, population_size)
+    initial_population, base_expanded = initialize_population(small_image, POPULATION_SIZE)
 
     # GAの実行
     best_individual, best_fitness = genetic_algorithm(initial_population, base_expanded, generations=1000, survival_rate=0.5)
@@ -244,16 +257,12 @@ if __name__ == '__main__':
     # 結果の表示
     fig, axes = plt.subplots(1, 4, figsize=(15, 5))
     axes[0].imshow(original_image, cmap='gray')
-    original_image_fitness = calculate_fitness(original_image)
     axes[0].set_title(f'Original Image (Fitness: {original_image_fitness:.2f})')
 
     axes[1].imshow(nearest_neighbor_image, cmap='gray')
-    nearest_neighbor_image_fitness = calculate_fitness(nearest_neighbor_image)
     axes[1].set_title(f'Nearest Neighbor (Fitness: {nearest_neighbor_image_fitness:.2f})')
 
-
     axes[2].imshow(bicubic_image, cmap='gray')
-    bicubic_image_fitness = calculate_fitness(bicubic_image)
     axes[2].set_title(f'Bicubic Interpolation (Fitness: {bicubic_image_fitness:.2f})')
 
     axes[3].imshow(best_individual, cmap='gray')
