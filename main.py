@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 
 POPULATION_SIZE = 160  # 集団のサイズ
 SUVIVAL_RATE = 0.5  # 生存率
+TOLERANCE = 1e-5  # 許容誤差
+
+print(POPULATION_SIZE, SUVIVAL_RATE, TOLERANCE)
 
 def initialize_population(base_image, population_size=10):
     """
@@ -135,6 +138,10 @@ def crossover(parent1, parent2):
                 else:
                     attempts += 1
 
+            if attempts >= 100:
+                print("デルタ値の範囲外のため、クリップ処理を行います。")
+                e4 = np.clip(e4, G_min, G_max)
+
             if not success:
                 # デルタ値の範囲外の場合、クリップして総和がゼロになるように調整
                 e4 = np.clip(e4, G_min, G_max)
@@ -162,7 +169,7 @@ def genetic_algorithm(initial_population, base_expanded, generations=100, surviv
     population = initial_population
     best_fitness_history = []
     max_fitness_stable_count = 0  # 進化完了の判定に使用
-    tolerance = 1e-5  # 許容誤差を設定
+    tolerance = TOLERANCE  # 許容誤差を設定
 
     for generation in range(generations):
         # 各個体の適応度を計算
@@ -226,7 +233,7 @@ if __name__ == '__main__':
     ###################### ここからGAの実行 ######################
     print("Start GA...")
     # 集団の初期化
-    population_size = POPULATION_SIZE
+    population_size = POPULATION_SIZE * 2 # 初期集団は2倍に設定
     initial_population, base_expanded = initialize_population(small_image, population_size)
 
     # GAの実行
