@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-POPULATION_SIZE = 100  # 集団のサイズ
+POPULATION_SIZE = 160  # 集団のサイズ
 SUVIVAL_RATE = 0.5  # 生存率
 
 def initialize_population(base_image, population_size=10):
@@ -202,7 +202,7 @@ def generate_image_from_deltas(delta_image, base_expanded):
 
 if __name__ == '__main__':
     # 画像の読み込み（グレースケール）
-    original_image = cv2.imread('imgs/sample.jpg', cv2.IMREAD_GRAYSCALE).astype(np.float32)
+    original_image = cv2.imread('imgs/sample2.jpg', cv2.IMREAD_GRAYSCALE).astype(np.float32)
     original_image = cv2.resize(original_image, (128, 128)) # 画像サイズをリサイズ
 
     if original_image is None:
