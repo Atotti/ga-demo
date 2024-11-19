@@ -1,5 +1,6 @@
 # 遺伝的アルゴリズムで画像拡大をするデモ
 
+[この論文](https://www.jstage.jst.go.jp/article/ieejeiss1987/120/2/120_2_244/_pdf/-char/ja)の実装です。
 
 ![sample1_result](https://github.com/user-attachments/assets/bd2bf86b-674a-4038-825b-530ca16028d6)
 
