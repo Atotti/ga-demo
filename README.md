@@ -5,17 +5,9 @@
 
 ## 進化過程
 
-<div style="display: flex;">
-  <video width="300" controls>
-    <source src="https://github.com/user-attachments/assets/636a5e67-2484-49d6-8d04-a5bbfb6a9207" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <video width="300" controls>
-    <source src="https://github.com/user-attachments/assets/4337f5db-350d-4a38-a898-8e35900d9284" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <video width="300" controls>
-    <source src="https://github.com/user-attachments/assets/04df4c67-ef2a-4ef1-9125-22caf286aa57" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-</div>
+ https://github.com/user-attachments/assets/9ebabe1b-5501-4c5d-aac7-cf80dad8051d 
+
+ https://github.com/user-attachments/assets/551f7161-7bf2-443f-b665-dac41499d029 
+
+https://github.com/user-attachments/assets/5e7bead9-56fe-4679-b306-aa65289789d1
+
